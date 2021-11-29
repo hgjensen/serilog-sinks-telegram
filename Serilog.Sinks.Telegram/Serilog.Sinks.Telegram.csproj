@@ -2,6 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Company>hgjensen</Company>
+    <RepositoryUrl>https://github.com/hgjensen/serilog-sinks-telegram</RepositoryUrl>
+    <PackageId>HGJ.$(AssemblyName)</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>Forked from oxozle https://github.com/oxozle/serilog-sinks-telegram
+Updated to use markdownV2</Description>
   </PropertyGroup>
 
   <ItemGroup>
