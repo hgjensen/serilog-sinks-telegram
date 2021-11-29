@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Serilog.Core;
 using Serilog.Debugging;
 using Serilog.Events;
+using Serilog.Sinks.Telegram.Client;
 
 namespace Serilog.Sinks.Telegram
 {
@@ -26,11 +27,11 @@ namespace Serilog.Sinks.Telegram
         public TelegramSink(string chatId, string token, RenderMessageMethod renderMessageImplementation,
             IFormatProvider formatProvider)
         {
-            if (string.IsNullOrWhiteSpace(value: chatId))
-                throw new ArgumentNullException(paramName: nameof(chatId));
+            if (string.IsNullOrWhiteSpace(chatId))
+                throw new ArgumentNullException(nameof(chatId));
 
-            if (string.IsNullOrWhiteSpace(value: token))
-                throw new ArgumentNullException(paramName: nameof(token));
+            if (string.IsNullOrWhiteSpace(token))
+                throw new ArgumentNullException(nameof(token));
 
             FormatProvider = formatProvider;
             if (renderMessageImplementation != null)
@@ -44,9 +45,9 @@ namespace Serilog.Sinks.Telegram
         public void Emit(LogEvent logEvent)
         {
             var message = FormatProvider != null
-                ? new TelegramMessage(text: logEvent.RenderMessage(formatProvider: FormatProvider))
-                : RenderMessageImplementation(input: logEvent);
-            SendMessage(token: _token, chatId: _chatId, message: message);
+              ? new TelegramMessage(logEvent.RenderMessage(FormatProvider))
+              : RenderMessageImplementation(logEvent);
+            SendMessage(_token, _chatId, message);
         }
 
         #endregion
@@ -66,7 +67,7 @@ namespace Serilog.Sinks.Telegram
             return new TelegramMessage(text: sb.ToString());
         }
 
-        private static string GetEmoji(LogEvent log)
+        private static string getEmoji(LogEvent log)
         {
             switch (log.Level)
             {
@@ -91,9 +92,9 @@ namespace Serilog.Sinks.Telegram
         {
             SelfLog.WriteLine($"Trying to send message to chatId '{chatId}': '{message}'.");
 
-            var client = new TelegramClient(botToken: token, timeoutSeconds: 5);
+            var client = new TelegramClient(token, 5);
 
-            var sendMessageTask = client.PostAsync(message: message, chatId: chatId);
+            var sendMessageTask = client.PostAsync(message, chatId);
             Task.WaitAll(sendMessageTask);
 
             var sendMessageResult = sendMessageTask.Result;
