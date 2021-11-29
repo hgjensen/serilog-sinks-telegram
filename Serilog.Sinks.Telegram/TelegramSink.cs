@@ -25,7 +25,7 @@ namespace Serilog.Sinks.Telegram
         protected RenderMessageMethod RenderMessageImplementation = RenderMessage;
 
         public TelegramSink(string chatId, string token, RenderMessageMethod renderMessageImplementation,
-            IFormatProvider formatProvider)
+          IFormatProvider formatProvider)
         {
             if (string.IsNullOrWhiteSpace(chatId))
                 throw new ArgumentNullException(nameof(chatId));
@@ -56,6 +56,9 @@ namespace Serilog.Sinks.Telegram
         {
             var sb = new StringBuilder();
             sb.AppendLine($"{getEmoji(logEvent)} {escapeMarkdownV2(logEvent.RenderMessage())}");
+            var sourceContext = logEvent.Properties["SourceContext"]?.ToString();
+            if (sourceContext != null)
+                sb.AppendLine($"\r\nSource context: *{escapeMarkdownV2(sourceContext.Replace("\"", ""))}*");
 
             if (logEvent.Exception != null)
             {
