@@ -1,4 +1,4 @@
-﻿namespace Serilog.Sinks.Telegram
+﻿namespace Serilog.Sinks.Telegram.Client
 {
     public sealed class TelegramMessage
     {

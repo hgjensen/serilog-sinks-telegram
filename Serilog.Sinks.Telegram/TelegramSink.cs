@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Serilog.Core;
 using Serilog.Debugging;
 using Serilog.Events;
+using Serilog.Sinks.Telegram.Client;
 
 namespace Serilog.Sinks.Telegram
 {
@@ -24,13 +25,13 @@ namespace Serilog.Sinks.Telegram
         protected RenderMessageMethod RenderMessageImplementation = RenderMessage;
 
         public TelegramSink(string chatId, string token, RenderMessageMethod renderMessageImplementation,
-            IFormatProvider formatProvider)
+          IFormatProvider formatProvider)
         {
-            if (string.IsNullOrWhiteSpace(value: chatId))
-                throw new ArgumentNullException(paramName: nameof(chatId));
+            if (string.IsNullOrWhiteSpace(chatId))
+                throw new ArgumentNullException(nameof(chatId));
 
-            if (string.IsNullOrWhiteSpace(value: token))
-                throw new ArgumentNullException(paramName: nameof(token));
+            if (string.IsNullOrWhiteSpace(token))
+                throw new ArgumentNullException(nameof(token));
 
             FormatProvider = formatProvider;
             if (renderMessageImplementation != null)
@@ -44,9 +45,9 @@ namespace Serilog.Sinks.Telegram
         public void Emit(LogEvent logEvent)
         {
             var message = FormatProvider != null
-                ? new TelegramMessage(text: logEvent.RenderMessage(formatProvider: FormatProvider))
-                : RenderMessageImplementation(input: logEvent);
-            SendMessage(token: _token, chatId: _chatId, message: message);
+              ? new TelegramMessage(logEvent.RenderMessage(FormatProvider))
+              : RenderMessageImplementation(logEvent);
+            SendMessage(_token, _chatId, message);
         }
 
         #endregion
@@ -54,19 +55,23 @@ namespace Serilog.Sinks.Telegram
         protected static TelegramMessage RenderMessage(LogEvent logEvent)
         {
             var sb = new StringBuilder();
-            sb.AppendLine(value: $"{GetEmoji(log: logEvent)} {logEvent.RenderMessage()}");
+            sb.AppendLine($"{getEmoji(logEvent)} {escapeMarkdownV2(logEvent.RenderMessage())}");
+            var sourceContext = logEvent.Properties["SourceContext"]?.ToString();
+            if (sourceContext != null)
+                sb.AppendLine($"\r\nSource context: *{escapeMarkdownV2(sourceContext.Replace("\"", ""))}*");
 
             if (logEvent.Exception != null)
             {
-                sb.AppendLine(value: $"\n*{logEvent.Exception.Message}*\n");
-                sb.AppendLine(value: $"Message: `{logEvent.Exception.Message}`");
-                sb.AppendLine(value: $"Type: `{logEvent.Exception.GetType().Name}`\n");
-                sb.AppendLine(value: $"Stack Trace\n```{logEvent.Exception}```");
+                sb.AppendLine($"\r\n*{escapeMarkdownV2(logEvent.Exception.Message)}*\r\n");
+                sb.AppendLine($"Message: `{escapeMarkdownV2(logEvent.Exception.Message)}`");
+                sb.AppendLine($"Type: `{escapeMarkdownV2(logEvent.Exception.GetType().Name)}`\r\n");
+                sb.AppendLine($"Stack Trace```\r\n{escapeMarkdownV2(logEvent.Exception.ToString())}\r\n```");
             }
-            return new TelegramMessage(text: sb.ToString());
+
+            return new TelegramMessage(sb.ToString());
         }
 
-        private static string GetEmoji(LogEvent log)
+        private static string getEmoji(LogEvent log)
         {
             switch (log.Level)
             {
@@ -91,14 +96,22 @@ namespace Serilog.Sinks.Telegram
         {
             SelfLog.WriteLine($"Trying to send message to chatId '{chatId}': '{message}'.");
 
-            var client = new TelegramClient(botToken: token, timeoutSeconds: 5);
+            var client = new TelegramClient(token, 5);
 
-            var sendMessageTask = client.PostAsync(message: message, chatId: chatId);
+            var sendMessageTask = client.PostAsync(message, chatId);
             Task.WaitAll(sendMessageTask);
 
             var sendMessageResult = sendMessageTask.Result;
             if (sendMessageResult != null)
                 SelfLog.WriteLine($"Message sent to chatId '{chatId}': '{sendMessageResult.StatusCode}'.");
+        }
+
+        private static string escapeMarkdownV2(string text)
+        {
+            var toReplace = new[] { "_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!" };
+            foreach (var item in toReplace)
+                text = text.Replace(item, $"\\{item}");
+            return text;
         }
     }
 }
