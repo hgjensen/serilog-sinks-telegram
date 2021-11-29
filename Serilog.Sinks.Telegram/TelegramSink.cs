@@ -55,16 +55,17 @@ namespace Serilog.Sinks.Telegram
         protected static TelegramMessage RenderMessage(LogEvent logEvent)
         {
             var sb = new StringBuilder();
-            sb.AppendLine(value: $"{GetEmoji(log: logEvent)} {logEvent.RenderMessage()}");
+            sb.AppendLine($"{getEmoji(logEvent)} {escapeMarkdownV2(logEvent.RenderMessage())}");
 
             if (logEvent.Exception != null)
             {
-                sb.AppendLine(value: $"\n*{logEvent.Exception.Message}*\n");
-                sb.AppendLine(value: $"Message: `{logEvent.Exception.Message}`");
-                sb.AppendLine(value: $"Type: `{logEvent.Exception.GetType().Name}`\n");
-                sb.AppendLine(value: $"Stack Trace\n```{logEvent.Exception}```");
+                sb.AppendLine($"\r\n*{escapeMarkdownV2(logEvent.Exception.Message)}*\r\n");
+                sb.AppendLine($"Message: `{escapeMarkdownV2(logEvent.Exception.Message)}`");
+                sb.AppendLine($"Type: `{escapeMarkdownV2(logEvent.Exception.GetType().Name)}`\r\n");
+                sb.AppendLine($"Stack Trace```\r\n{escapeMarkdownV2(logEvent.Exception.ToString())}\r\n```");
             }
-            return new TelegramMessage(text: sb.ToString());
+
+            return new TelegramMessage(sb.ToString());
         }
 
         private static string getEmoji(LogEvent log)
@@ -100,6 +101,14 @@ namespace Serilog.Sinks.Telegram
             var sendMessageResult = sendMessageTask.Result;
             if (sendMessageResult != null)
                 SelfLog.WriteLine($"Message sent to chatId '{chatId}': '{sendMessageResult.StatusCode}'.");
+        }
+
+        private static string escapeMarkdownV2(string text)
+        {
+            var toReplace = new[] { "_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!" };
+            foreach (var item in toReplace)
+                text = text.Replace(item, $"\\{item}");
+            return text;
         }
     }
 }
