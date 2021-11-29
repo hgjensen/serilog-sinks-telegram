@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace Serilog.Sinks.Telegram
+namespace Serilog.Sinks.Telegram.Client
 {
     public class TelegramClient
     {
