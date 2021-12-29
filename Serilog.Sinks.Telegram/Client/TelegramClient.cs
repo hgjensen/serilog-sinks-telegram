@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace Serilog.Sinks.Telegram.Client
 {
@@ -23,7 +23,7 @@ namespace Serilog.Sinks.Telegram.Client
     public async Task<HttpResponseMessage> PostAsync(TelegramMessage message, string chatId)
     {
       var payload = new { chat_id = chatId, text = message.Text, parse_mode = "MarkdownV2" };
-      var json = JsonConvert.SerializeObject(payload);
+      var json = JsonSerializer.Serialize(payload);
       var response = await _httpClient.PostAsync(_apiUrl,
         new StringContent(json, Encoding.UTF8, "application/json"));
 
