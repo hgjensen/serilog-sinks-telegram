@@ -9,7 +9,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Forked from oxozle https://github.com/oxozle/serilog-sinks-telegram
 Updated to use markdownV2 and System.Text.Json</Description>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Deterministic>False</Deterministic>
   </PropertyGroup>
 
