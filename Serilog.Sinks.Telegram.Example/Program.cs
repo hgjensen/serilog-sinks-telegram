@@ -12,25 +12,15 @@ namespace Serilog.Sinks.Telegram.Example {
     static void Main(string[] args) {
       var log = new LoggerConfiguration()
         .MinimumLevel.Verbose()
-        .WriteTo.Telegram("", ""),
-          ListenerOnUpdatesReceived, out _telegramHandle)
+        //.WriteTo.Telegram("", "")
+        //If you want to handle incoming messages, use this overload:
+        .WriteTo.Telegram("", "", ListenerOnUpdatesReceived, out _telegramHandle)
         .CreateLogger();
 
       log.Information("This is an information message!");
 
       var listener = new TelegramSinkMessageHandler("", "");
       listener.UpdatesReceived += ListenerOnUpdatesReceived;
-
-      //try {
-      //  log.Verbose("This is an verbose message!");
-      //  log.Debug("This is an debug message!");
-      //  log.Information("This is an information message!");
-      //  log.Warning("This is an warning message!");
-      //  log.Error("This is an error message!");
-      //  throw new Exception("This is an exception!");
-      //} catch (Exception exception) {
-      //  log.Fatal(exception, "Exception catched at Main.");
-      //}
 
       _cts.Token.WaitHandle.WaitOne();
       _telegramHandle?.Dispose();
@@ -44,6 +34,19 @@ namespace Serilog.Sinks.Telegram.Example {
         switch (firstWord) {
           case "/HELP":
             upd.Reply("Så er der hjælp på vej...").Wait();
+            break;
+          case "/TEST":
+            try {
+              Log.Verbose("This is an verbose message!");
+              Log.Debug("This is an debug message!");
+              Log.Information("This is an information message!");
+              Log.Warning("This is an warning message!");
+              Log.Error("This is an error message!");
+              throw new Exception("This is an exception!");
+            } catch (Exception exception) {
+              Log.Fatal(exception, "Exception catched at Main.");
+            }
+
             break;
           case "/QUIT":
             upd.Reply("Exiting ... ;-)").Wait();
